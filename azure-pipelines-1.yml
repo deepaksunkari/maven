@@ -52,4 +52,18 @@ stages:
           - powershell: |
               Write-Host "Deployment reached VM successfully"
               hostname
+
+              # Show downloaded files
               Get-ChildItem -Recurse "$(Pipeline.Workspace)"
+
+              # Find WAR file
+              $war = Get-ChildItem -Path "$(Pipeline.Workspace)" -Filter *.war -Recurse | Select-Object -First 1
+
+              Write-Host "WAR file found: $($war.FullName)"
+
+              # Copy WAR to Tomcat webapps folder
+              Copy-Item $war.FullName `
+                "C:\Users\sunkari\Downloads\apache-tomcat-9.0.121-windows-x64\apache-tomcat-9.0.121\webapps\" `
+                -Force
+
+              Write-Host "WAR copied successfully"
