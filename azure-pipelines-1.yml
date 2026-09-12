@@ -1,26 +1,26 @@
-trigger:
-- master
+trigger: none
+
+pr: none
 
 stages:
-
 - stage: Build
+  displayName: Build WAR
+
   jobs:
-  - job: Build
+  - job: BuildJob
     pool:
-      vmImage: ubuntu-latest
+      vmImage: 'ubuntu-latest'
 
     steps:
-
     - task: Maven@3
       inputs:
         mavenPomFile: 'pom.xml'
-        mavenOptions: '-Xmx3072m'
+        goals: 'package'
+        publishJUnitResults: true
+        testResultsFiles: '**/surefire-reports/TEST-*.xml'
         javaHomeOption: 'JDKVersion'
         jdkVersionOption: '1.11'
         jdkArchitectureOption: 'x64'
-        publishJUnitResults: true
-        testResultsFiles: '**/surefire-reports/TEST-*.xml'
-        goals: 'package'
 
     - task: CopyFiles@2
       inputs:
@@ -35,63 +35,61 @@ stages:
         publishLocation: 'Container'
 
 - stage: Deploy
+  displayName: Deploy WAR
   dependsOn: Build
 
   jobs:
   - deployment: DeployToVM
-    displayName: Deploy WAR to Tomcat VM
-    environment: java_webapp
+    displayName: Deploy To Windows VM
+
+    environment:
+      name: 'java_webapp'
+      resourceName: 'sunkari'
+      resourceType: VirtualMachine
 
     strategy:
       runOnce:
         deploy:
           steps:
 
-          # Download artifact generated in Build stage
           - download: current
             artifact: java-war-file
 
-          # Run on the target Windows VM
           - task: PowerShell@2
-            displayName: Deploy WAR to Tomcat
+            displayName: 'Deploy WAR to Tomcat'
             inputs:
-              targetType: inline
+              targetType: 'inline'
               script: |
 
-                Write-Host "=== Running on VM ==="
+                Write-Host "===== MACHINE INFO ====="
                 hostname
                 Write-Host $env:COMPUTERNAME
+                Write-Host $env:OS
 
-                # Show downloaded files
                 Get-ChildItem -Path "$(Pipeline.Workspace)" -Recurse
 
-                # Locate WAR file
                 $war = Get-ChildItem `
                   -Path "$(Pipeline.Workspace)" `
                   -Filter *.war `
-                  -Recurse |
-                  Select-Object -First 1
+                  -Recurse | Select-Object -First 1
 
-                if (-not $war) {
-                    throw "WAR file not found"
+                if ($null -eq $war) {
+                  throw "WAR file not found"
                 }
 
                 Write-Host "WAR Found: $($war.FullName)"
 
-                # Tomcat deployment directory
                 $TomcatWebApps = "C:\Users\sunkari\Downloads\apache-tomcat-9.0.121-windows-x64\apache-tomcat-9.0.121\webapps"
 
-                # Copy WAR
-                Copy-Item $war.FullName `
+                if (!(Test-Path $TomcatWebApps)) {
+                  throw "Tomcat path not found: $TomcatWebApps"
+                }
+
+                Copy-Item `
+                  -Path $war.FullName `
                   -Destination "$TomcatWebApps\webapp.war" `
                   -Force
 
                 Write-Host "WAR copied successfully"
 
-                # Optional: Restart Tomcat service if installed as a service
-                $service = Get-Service | Where-Object {$_.Name -like "*Tomcat*"}
-
-                if ($service) {
-                    Restart-Service $service.Name -Force
-                    Write-Host "Tomcat service restarted"
-                }
+                Get-ChildItem "$TomcatWebApps"
