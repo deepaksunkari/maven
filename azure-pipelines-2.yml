@@ -19,12 +19,16 @@ steps:
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
 
-- task: PublishPipelineArtifact@1
-  displayName: 'Publish Build Artifacts'
-  inputs:
-    targetPath: '$(System.DefaultWorkingDirectory)/target'
-    artifact: 'webapp'
-
+# Verification script (moved BEFORE publishing so you can debug the file layout)
 - script: |
-    ls -l target
-  displayName: 'Verify Artifact'
+    echo "=== Checking contents of webapp/target ==="
+    ls -l webapp/target
+  displayName: 'Verify Artifact Location'
+
+# Modern artifact publishing task pointing directly to your .war file
+- task: PublishPipelineArtifact@1
+  displayName: 'Publish Webapp WAR'
+  inputs:
+    targetPath: '$(System.DefaultWorkingDirectory)/webapp/target/webapp.war'
+    artifact: 'webapp'
+    publishLocation: 'pipeline'
