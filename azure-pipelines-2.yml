@@ -5,13 +5,13 @@ pool:
   name: LocalMachine
 
 steps:
+# 1. Build the Application (Runs only once)
 - task: Maven@3
   displayName: 'Build Java Application'
   inputs:
     mavenPomFile: 'pom.xml'
     goals: 'package'
     mavenOptions: '-Xmx3072m'
-    # Configured to use your custom OpenJDK 21 path
     javaHomeOption: 'Path'
     jdkDirectory: '/usr/lib/jvm/java-21-openjdk-amd64'
     jdkArchitectureOption: 'x64'
@@ -19,23 +19,26 @@ steps:
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
 
-# Verification script (moved BEFORE publishing so you can debug the file layout)
+# 2. Local Deploy & Verification Script (Wrapped in a proper task block)
 - script: |
-    echo "=== Checking contents of webapp/target ==="
-    ls -l webapp/target
-  displayName: 'Verify Artifact Location'
+    echo "========================================="
+    echo "1. VERIFYING GENERATED ARTIFACT:"
+    ls -l "$(System.DefaultWorkingDirectory)/webapp/target/webapp.war"
 
-# Inside your Build Job steps:
-- task: Maven@3
-  inputs:
-    mavenPomFile: 'pom.xml'
-    goals: 'package'
-    # ... your other settings ...
+    echo "========================================="
+    echo "2. DEPLOYING TO TOMCAT..."
+    # Copies straight from your local build directory to your local Tomcat webapps folder
+    cp "$(System.DefaultWorkingDirectory)/webapp/target/webapp.war" "$(System.DefaultWorkingDirectory)/apache/tomcat/webapps/"
 
+    echo "========================================="
+    echo "3. VERIFYING TOMCAT DEPLOYMENT:"
+    ls -l "$(System.DefaultWorkingDirectory)/apache/tomcat/webapps/webapp.war"
+  displayName: 'Verify and Deploy to Local Tomcat'
+
+# 3. Cloud Archive (Optional: Keeps a backup copy securely in the Azure Cloud)
 - task: PublishPipelineArtifact@1
-  displayName: 'Upload War File'
+  displayName: 'Upload Backup War to Cloud'
   inputs:
     targetPath: '$(System.DefaultWorkingDirectory)/webapp/target/webapp.war'
     artifact: 'webapp'
     publishLocation: 'pipeline'
-
