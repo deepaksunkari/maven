@@ -5,7 +5,7 @@ pool:
   name: LocalMachine
 
 steps:
-# 1. Build the Application (Runs only once)
+# 1. Build the Application
 - task: Maven@3
   displayName: 'Build Java Application'
   inputs:
@@ -19,7 +19,7 @@ steps:
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
 
-# 2. Local Deploy & Verification Script (Wrapped in a proper task block)
+# 2. Local Deploy & Verification Script
 - script: |
     echo "========================================="
     echo "1. VERIFYING GENERATED ARTIFACT:"
@@ -27,7 +27,7 @@ steps:
 
     echo "========================================="
     echo "2. DEPLOYING TO TOMCAT..."
-    # Navigates back out of _work/1/s to reach the root 'myagent' folder
+    # Moves out of _work/1/s up to myagent/ and copies to apache/tomcat/webapps
     cp "$(System.DefaultWorkingDirectory)/webapp/target/webapp.war" "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/"
 
     echo "========================================="
@@ -35,8 +35,7 @@ steps:
     ls -l "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/webapp.war"
   displayName: 'Verify and Deploy to Local Tomcat'
 
-
-# 3. Cloud Archive (Optional: Keeps a backup copy securely in the Azure Cloud)
+# 3. Cloud Archive (Keeps a backup copy securely in the Azure Cloud)
 - task: PublishPipelineArtifact@1
   displayName: 'Upload Backup War to Cloud'
   inputs:
