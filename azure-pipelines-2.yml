@@ -27,13 +27,14 @@ steps:
 
     echo "========================================="
     echo "2. DEPLOYING TO TOMCAT..."
-    # Copies straight from your local build directory to your local Tomcat webapps folder
-    cp "$(System.DefaultWorkingDirectory)/webapp/target/webapp.war" "$(System.DefaultWorkingDirectory)/apache/tomcat/webapps/"
+    # Navigates back out of _work/1/s to reach the root 'myagent' folder
+    cp "$(System.DefaultWorkingDirectory)/webapp/target/webapp.war" "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/"
 
     echo "========================================="
     echo "3. VERIFYING TOMCAT DEPLOYMENT:"
-    ls -l "$(System.DefaultWorkingDirectory)/apache/tomcat/webapps/webapp.war"
+    ls -l "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/webapp.war"
   displayName: 'Verify and Deploy to Local Tomcat'
+
 
 # 3. Cloud Archive (Optional: Keeps a backup copy securely in the Azure Cloud)
 - task: PublishPipelineArtifact@1
