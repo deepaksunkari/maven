@@ -25,10 +25,17 @@ steps:
     ls -l webapp/target
   displayName: 'Verify Artifact Location'
 
-# Modern artifact publishing task pointing directly to your .war file
+# Inside your Build Job steps:
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'package'
+    # ... your other settings ...
+
 - task: PublishPipelineArtifact@1
-  displayName: 'Publish Webapp WAR'
+  displayName: 'Upload War File'
   inputs:
     targetPath: '$(System.DefaultWorkingDirectory)/webapp/target/webapp.war'
     artifact: 'webapp'
     publishLocation: 'pipeline'
+
