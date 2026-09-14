@@ -9,15 +9,18 @@ steps:
   displayName: 'Build Java Application'
   inputs:
     mavenPomFile: 'pom.xml'
+    goals: 'package'
     mavenOptions: '-Xmx3072m'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.11'
+    # Configured to use your custom OpenJDK 21 path
+    javaHomeOption: 'Path'
+    jdkDirectory: '/usr/lib/jvm/java-21-openjdk-amd64'
     jdkArchitectureOption: 'x64'
+    mavenVersionOption: 'Default'
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    goals: 'package'
 
 - task: PublishPipelineArtifact@1
+  displayName: 'Publish Build Artifacts'
   inputs:
     targetPath: '$(System.DefaultWorkingDirectory)/target'
     artifact: 'webapp'
