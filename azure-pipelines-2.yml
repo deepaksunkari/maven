@@ -28,13 +28,30 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'localWebapp'
     publishLocation: 'Container'
-- script: |
-    echo "========================================="
-    echo "1. DEPLOYING WAR FILE TO TOMCAT CONTAINER..."
-    # Moves out of the agent build workspace folder and drops it straight into Tomcat
-    cp "$(System.DefaultWorkingDirectory)/webapp/target/webapp.war" "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/"
+- powershell: |
+    Write-Host "========================================="
+    Write-Host "1. DEPLOYING WAR FILE TO TOMCAT CONTAINER..."
+    
+    $sourcePath = "$(System.DefaultWorkingDirectory)\webapp\target\webapp.war"
+    $targetDir  = "C:\Program Files\Tomcat\webapps"
+    
+    # Check if the target webapps directory exists, create it if missing
+    if (-not (Test-Path $targetDir)) {
+        New-Item -ItemType Directory -Force -Path $targetDir
+    }
+    
+    # Copy the fresh war file directly over to your Windows Tomcat folder
+    Copy-Item -Path $sourcePath -Destination $targetDir -Force
 
-    echo "========================================="
-    echo "2. VERIFYING TOMCAT DEPLOYMENT LOCATION:"
-    ls -l "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/webapp.war"
-  displayName: 'Deploy WAR to Local Tomcat'
+    Write-Host "========================================="
+    Write-Host "2. VERIFYING TOMCAT DEPLOYMENT LOCATION:"
+    
+    if (Test-Path "$targetDir\webapp.war") {
+        Write-Host "SUCCESS: webapp.war successfully deployed to $targetDir"
+        Get-ChildItem "$targetDir\webapp.war"
+    } else {
+        Write-Host "ERROR: webapp.war file was not found in the target directory!"
+        exit 1
+    }
+  displayName: 'Deploy WAR to Local Windows Tomcat'
+
