@@ -2,7 +2,7 @@ trigger: none
 pr: none
 
 pool:
-  name: LocalMachine
+  name: CorpMachine
 
 steps:
 # 1. Build the Application
