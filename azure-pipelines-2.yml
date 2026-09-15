@@ -12,7 +12,7 @@ steps:
     mavenPomFile: 'pom.xml'
     goals: 'package'
     mavenOptions: '-Xmx3072m'
-    # Tell the task to use the default system JAVA_HOME environment variable
+    # Instructs the task to grab the native system configurations we just mapped
     javaHomeOption: 'JDKVersion'
     jdkVersionOption: 'default'
     mavenVersionOption: 'Default'
