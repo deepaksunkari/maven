@@ -23,35 +23,33 @@ steps:
   inputs:
     Contents: '**/*.war'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
-- task: PublishBuildArtifacts@1
-  inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'localWebapp'
-    publishLocation: 'Container'
+
 - powershell: |
     Write-Host "========================================="
-    Write-Host "1. DEPLOYING WAR FILE TO TOMCAT CONTAINER..."
-    
-    $sourcePath = "$(System.DefaultWorkingDirectory)\webapp\target\webapp.war"
+    Write-Host "1. CLEANING OLD DEPLOYMENTS TO PREVENT CACHING..."
     $targetDir  = "C:\Program Files\Tomcat\webapps"
     
-    # Check if the target webapps directory exists, create it if missing
+    # Forcefully delete old war and unpacked folder if they exist
+    if (Test-Path "$targetDir\webapp.war") { Remove-Item "$targetDir\webapp.war" -Force }
+    if (Test-Path "$targetDir\webapp") { Remove-Item "$targetDir\webapp" -Recurse -Force }
+
+    Write-Host "========================================="
+    Write-Host "2. DEPLOYING FRESH WAR FILE TO TOMCAT..."
+    $sourcePath = "$(System.DefaultWorkingDirectory)\webapp\target\webapp.war"
+    
     if (-not (Test-Path $targetDir)) {
         New-Item -ItemType Directory -Force -Path $targetDir
     }
     
-    # Copy the fresh war file directly over to your Windows Tomcat folder
     Copy-Item -Path $sourcePath -Destination $targetDir -Force
 
     Write-Host "========================================="
-    Write-Host "2. VERIFYING TOMCAT DEPLOYMENT LOCATION:"
-    
+    Write-Host "3. VERIFYING TOMCAT DEPLOYMENT LOCATION:"
     if (Test-Path "$targetDir\webapp.war") {
-        Write-Host "SUCCESS: webapp.war successfully deployed to $targetDir"
+        Write-Host "SUCCESS: Fresh webapp.war successfully deployed!"
         Get-ChildItem "$targetDir\webapp.war"
     } else {
-        Write-Host "ERROR: webapp.war file was not found in the target directory!"
+        Write-Host "ERROR: Deployment failed!"
         exit 1
     }
-  displayName: 'Deploy WAR to Local Windows Tomcat'
-
+  displayName: 'Clean and Deploy WAR to Local Windows Tomcat'
