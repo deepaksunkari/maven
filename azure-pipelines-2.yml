@@ -18,27 +18,13 @@ steps:
     mavenVersionOption: 'Default'
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
-
-# 2. Local Deploy & Verification Script
-- script: |
-    echo "========================================="
-    echo "1. VERIFYING GENERATED ARTIFACT:"
-    ls -l "$(System.DefaultWorkingDirectory)/webapp/target/webapp.war"
-
-    echo "========================================="
-    echo "2. DEPLOYING TO TOMCAT..."
-    # Moves out of _work/1/s up to myagent/ and copies to apache/tomcat/webapps
-    cp "$(System.DefaultWorkingDirectory)/webapp/target/webapp.war" "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/"
-
-    echo "========================================="
-    echo "3. VERIFYING TOMCAT DEPLOYMENT:"
-    ls -l "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/webapp.war"
-  displayName: 'Verify and Deploy to Local Tomcat'
-
-# 3. Cloud Archive (Keeps a backup copy securely in the Azure Cloud)
-- task: PublishPipelineArtifact@1
-  displayName: 'Upload Backup War to Cloud'
+- task: CopyFiles@2
+  displayName: 'Staging WAR File'
   inputs:
-    targetPath: '$(System.DefaultWorkingDirectory)/webapp/target/webapp.war'
-    artifact: 'webapp'
-    publishLocation: 'pipeline'
+    Contents: '**/*.war'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'localWebapp'
+    publishLocation: 'Container'
