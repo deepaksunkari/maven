@@ -1,55 +1,105 @@
 trigger: none
+
 pr: none
 
 pool:
   name: CorpMachine
 
 steps:
-# 1. Build the Application
+
+# 1. Build Application
 - task: Maven@3
   displayName: 'Build Java Application'
   inputs:
     mavenPomFile: 'pom.xml'
     goals: 'package'
     mavenOptions: '-Xmx3072m'
-    # Instructs the task to grab the native system configurations we just mapped
     javaHomeOption: 'JDKVersion'
     jdkVersionOption: 'default'
     mavenVersionOption: 'Default'
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
+
+# 2. Stage WAR File
 - task: CopyFiles@2
-  displayName: 'Staging WAR File'
+  displayName: 'Stage WAR File'
   inputs:
     Contents: '**/*.war'
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
+# 3. Diagnostics
 - powershell: |
-    Write-Host "========================================="
+    Write-Host "========== DIAGNOSTICS =========="
+
+    Write-Host "`nRunning as:"
+    whoami
+
+    Write-Host "`nDesktop Path Exists?"
+    Test-Path "C:\Users\dsunkari\OneDrive - Microsoft\Desktop\Tomcat\webapps"
+
+    Write-Host "`nListing Desktop Folder..."
+    Get-ChildItem "C:\Users\dsunkari\OneDrive - Microsoft\Desktop" -ErrorAction Continue
+
+    Write-Host "`nSearching for WAR files..."
+    Get-ChildItem "$(System.DefaultWorkingDirectory)" -Recurse -Filter *.war
+
+  displayName: 'Diagnostics'
+
+# 4. Deploy WAR to Tomcat
+- powershell: |
+
+    Write-Host ""
     Write-Host "1. CLEANING OLD DEPLOYMENTS TO PREVENT CACHING..."
-    $targetDir  = "C:\Users\dsunkari\OneDrive - Microsoft\Desktop\Tomcat\webapps"
-    
-    # Forcefully delete old war and unpacked folder if they exist
-    if (Test-Path "$targetDir\webapp.war") { Remove-Item "$targetDir\webapp.war" -Force }
-    if (Test-Path "$targetDir\webapp") { Remove-Item "$targetDir\webapp" -Recurse -Force }
 
-    Write-Host "========================================="
-    Write-Host "2. DEPLOYING FRESH WAR FILE TO TOMCAT..."
-    $sourcePath = "$(System.DefaultWorkingDirectory)\webapp\target\webapp.war"
-    
-    if (-not (Test-Path $targetDir)) {
-        New-Item -ItemType Directory -Force -Path $targetDir
-    }
-    
-    Copy-Item -Path $sourcePath -Destination $targetDir -Force
+    $targetDir = "C:\Users\dsunkari\OneDrive - Microsoft\Desktop\Tomcat\webapps"
 
-    Write-Host "========================================="
-    Write-Host "3. VERIFYING TOMCAT DEPLOYMENT LOCATION:"
     if (Test-Path "$targetDir\webapp.war") {
-        Write-Host "SUCCESS: Fresh webapp.war successfully deployed!"
-        Get-ChildItem "$targetDir\webapp.war"
-    } else {
-        Write-Host "ERROR: Deployment failed!"
+        Remove-Item "$targetDir\webapp.war" -Force
+        Write-Host "Removed old WAR"
+    }
+
+    if (Test-Path "$targetDir\webapp") {
+        Remove-Item "$targetDir\webapp" -Recurse -Force
+        Write-Host "Removed exploded webapp folder"
+    }
+
+    Write-Host ""
+    Write-Host "2. LOCATING GENERATED WAR FILE..."
+
+    $warFile = Get-ChildItem "$(System.DefaultWorkingDirectory)" `
+        -Recurse `
+        -Filter *.war | Select-Object -First 1
+
+    if (-not $warFile) {
+        Write-Host "ERROR: No WAR file found."
         exit 1
     }
-  displayName: 'Clean and Deploy WAR to Local Windows Tomcat'
+
+    Write-Host "WAR Found:"
+    Write-Host $warFile.FullName
+
+    if (-not (Test-Path $targetDir)) {
+        New-Item -Path $targetDir -ItemType Directory -Force
+    }
+
+    Write-Host ""
+    Write-Host "3. COPYING WAR TO TOMCAT..."
+
+    Copy-Item `
+        -Path $warFile.FullName `
+        -Destination "$targetDir\webapp.war" `
+        -Force
+
+    Write-Host ""
+    Write-Host "4. VERIFYING DEPLOYMENT..."
+
+    if (Test-Path "$targetDir\webapp.war") {
+        Write-Host "SUCCESS: webapp.war deployed successfully."
+        Get-Item "$targetDir\webapp.war"
+    }
+    else {
+        Write-Host "ERROR: Deployment failed."
+        exit 1
+    }
+
+  displayName: 'Clean Deploy WAR to Local Windows Tomcat'
