@@ -12,9 +12,9 @@ steps:
     mavenPomFile: 'pom.xml'
     goals: 'package'
     mavenOptions: '-Xmx3072m'
-    javaHomeOption: 'Path'
-    jdkDirectory: '/usr/lib/jvm/java-21-openjdk-amd64'
-    jdkArchitectureOption: 'x64'
+    # Tell the task to use the default system JAVA_HOME environment variable
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: 'default'
     mavenVersionOption: 'Default'
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
