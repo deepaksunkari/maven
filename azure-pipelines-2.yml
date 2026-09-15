@@ -28,3 +28,13 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'localWebapp'
     publishLocation: 'Container'
+- script: |
+    echo "========================================="
+    echo "1. DEPLOYING WAR FILE TO TOMCAT CONTAINER..."
+    # Moves out of the agent build workspace folder and drops it straight into Tomcat
+    cp "$(System.DefaultWorkingDirectory)/webapp/target/webapp.war" "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/"
+
+    echo "========================================="
+    echo "2. VERIFYING TOMCAT DEPLOYMENT LOCATION:"
+    ls -l "$(System.DefaultWorkingDirectory)/../../../apache/tomcat/webapps/webapp.war"
+  displayName: 'Deploy WAR to Local Tomcat'
