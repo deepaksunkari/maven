@@ -27,7 +27,7 @@ steps:
 - powershell: |
     Write-Host "========================================="
     Write-Host "1. CLEANING OLD DEPLOYMENTS TO PREVENT CACHING..."
-    $targetDir  = "C:\Program Files\Tomcat\webapps"
+    $targetDir  = "C:\Users\dsunkari\OneDrive - Microsoft\Desktop\Tomcat\webapps"
     
     # Forcefully delete old war and unpacked folder if they exist
     if (Test-Path "$targetDir\webapp.war") { Remove-Item "$targetDir\webapp.war" -Force }
