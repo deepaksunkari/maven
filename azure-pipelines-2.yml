@@ -35,10 +35,10 @@ steps:
     whoami
 
     Write-Host "`nDesktop Path Exists?"
-    Test-Path "C:\Users\dsunkari\OneDrive - Microsoft\Desktop\Tomcat\webapps"
+    Test-Path "C:\Tomcat\webapps"
 
     Write-Host "`nListing Desktop Folder..."
-    Get-ChildItem "C:\Users\dsunkari\OneDrive - Microsoft\Desktop" -ErrorAction Continue
+    Get-ChildItem "C:\Tomcat\webapps" -ErrorAction Continue
 
     Write-Host "`nSearching for WAR files..."
     Get-ChildItem "$(System.DefaultWorkingDirectory)" -Recurse -Filter *.war
@@ -51,7 +51,7 @@ steps:
     Write-Host ""
     Write-Host "1. CLEANING OLD DEPLOYMENTS TO PREVENT CACHING..."
 
-    $targetDir = "C:\Users\dsunkari\OneDrive - Microsoft\Desktop\Tomcat\webapps"
+    $targetDir = "C:\Tomcat\webapps"
 
     if (Test-Path "$targetDir\webapp.war") {
         Remove-Item "$targetDir\webapp.war" -Force
