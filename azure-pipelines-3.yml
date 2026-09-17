@@ -20,6 +20,17 @@ steps:
     publishJUnitResults: true
     testResultsFiles: '**/surefire-reports/TEST-*.xml'
     goals: 'package'
+- script: |
+    echo "Finding WAR file..."
+    find "$(Build.SourcesDirectory)" -name "*.war"
+
+    echo "Copying WAR to Docker build context..."
+    cp "$(Build.SourcesDirectory)/webapp/target/webapp.war" \
+       "$(Build.SourcesDirectory)/webapp.war"
+
+    echo "Files in Docker build context:"
+    ls -la "$(Build.SourcesDirectory)"
+  displayName: 'Prepare WAR for Docker'
 - task: Docker@2
   inputs:
     containerRegistry: 'DockerHUB'
